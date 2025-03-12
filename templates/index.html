@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat</title>
+    <style>
+        :root {
+            --primary-blue: #6CB4EE;
+            --light-gray: #F8F9FA;
+            --text-dark: #2D3436;
+            --transition-duration: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            background: var(--light-gray);
+            color: var(--text-dark);
+        }
+
+        /* 左侧主区域 */
+        .left {
+            flex: 8;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        /* 右侧验证区域 */
+        .right {
+            flex: 2;
+            padding: 1.5rem;
+            background: white;
+            border-left: 1px solid #E0E0E0;
+            overflow-y: auto;
+        }
+
+        /* 顶部输入配置 */
+        .top {
+            display: flex;
+            gap: 0.6rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 0.5px solid #EEE;
+        }
+
+        .top input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 1px solid #DDD;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color var(--transition-duration);
+        }
+
+        .top input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(108, 180, 238, 0.2);
+        }
+
+        /* 消息展示区域 */
+        .middle {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        /* 消息气泡样式 */
+        .user-input {
+            align-self: flex-end;
+            background: var(--primary-blue);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 80%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            line-height: 1.5;
+        }
+
+        .model-output {
+            align-self: flex-start;
+            background: var(--light-gray);
+            padding: 12px 18px;
+            border-radius: 18px 18px 18px 4px;
+            max-width: 80%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        /* 底部输入区域 */
+        .bottom {
+            padding-top: 1.5rem;
+            border-top: 1px solid #EEE;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 1rem;
+            border: 1px solid #DDD;
+            border-radius: 8px;
+            resize: vertical;
+            margin-bottom: 1rem;
+            font-size: 15px;
+            transition: border-color var(--transition-duration);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(108, 180, 238, 0.2);
+        }
+
+        button {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 
+                background-color var(--transition-duration),
+                transform 0.1s ease;
+        }
+
+        button:hover {
+            background: #4FA4E0;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* 签名信息卡片 */
+        .signature-container {
+            background: white;
+            border-radius: 8px; /* 减小圆角 */
+            padding: 0.8rem; /* 减少内边距 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 0.8rem; /* 减少外边距 */
+        }
+
+        .signature-title {
+            font-size: 0.9rem; /* 减小字体大小 */
+            font-weight: 600;
+            margin-bottom: 0.6rem; /* 减少底部间距 */
+            color: var(--primary-blue);
+            padding-bottom: 0.4rem; /* 减少底部内边距 */
+            border-bottom: 1px solid #EEE;
+        }
+
+        .signature-item {
+            margin-bottom: 0.4rem; /* 减少底部间距 */
+        }
+
+        .signature-item strong {
+            display: block;
+            margin-bottom: 0.4rem; /* 减少底部间距 */
+            color: #666;
+            font-size: 0.8rem; /* 减小字体大小 */
+        }
+
+        .signature-value {
+            background: var(--light-gray);
+            padding: 0.6rem; /* 减少内边距 */
+            border-radius: 4px; /* 减小圆角 */
+            word-break: break-word;
+            font-family: monospace;
+            font-size: 0.8rem; /* 减小字体大小 */
+            line-height: 1.4; /* 减小行高 */
+        }
+
+        /* 加载动画 */
+        @keyframes pulse {
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            width: 100%;
+            text-align: center;
+            padding: 0.5rem;
+            background: var(--light-gray);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            color: #666;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .right {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid #EEE;
+            }
+            .user-input,
+            .model-output {
+                max-width: 90%;
+            }
+        }
+        /* 加载动画 */
+        @keyframes dotPulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        .loading-dots {
+            display: inline-block;
+            font-size: 1.2rem;
+        }
+
+        .loading-dots span {
+            animation: dotPulse 1.4s infinite;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+    </style>
+</head>
+<body>
+    <div class="left">
+        <div class="top">
+            <input type="text" id="apiUrl" placeholder="API地址" value="https://127.0.0.1:11434" size="50">
+            <input type="text" id="modelName" placeholder="模型名称" value="deepseek-r1:1.5b">
+            <input type="text" id="apiKey" placeholder="API Key" value="ss-......." size = 50>
+        </div>
+        <div class="middle" id="output">
+            <!-- 用户输入和大模型输出将被动态添加到这里 -->
+        </div>
+        <div class="bottom">
+            <textarea id="input" placeholder="输入你的问题..." onkeydown="handleKeyDown(event)" >介绍自己</textarea>
+            <button onclick="sendMessage()">发送消息</button>
+        </div>
+    </div>
+    <div class="right" id="verification"></div>
+
+    <script>
+        function createLoader() {
+            const loader = document.createElement('div');
+            loader.className = 'model-output loading';
+            loader.innerHTML = `
+                <div class="loading-dots">
+                    <span>思考中...·</span>
+                </div>
+            `;
+            return loader;
+        }
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();  // 阻止默认的换行行为
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('input').value;
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const modelName = document.getElementById('modelName').value;
+            const output = document.getElementById('output');
+            verification.innerHTML = '';
+            
+            // 显示用户输入在右侧
+            const userInputDiv = document.createElement('div');
+            userInputDiv.className = 'user-input';
+            userInputDiv.innerText = input;
+            output.appendChild(userInputDiv);
+            userInputDiv.scrollIntoView({ behavior: 'smooth' });  // 滚动到用户输入
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: input, apiUrl: apiUrl, apiKey: apiKey, modelName: modelName })
+            })
+            .then(response => {
+                document.getElementById('input').value = ""
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+
+                let modelOutputDiv = null;  // 用于存储当前的大模型输出div
+                // 可添加加载状态指示器
+                // const loadingIndicator = document.createElement('div');
+                const loadingIndicator = createLoader();
+                output.appendChild(loadingIndicator);
+                loadingIndicator.scrollIntoView({ behavior: 'smooth' });
+
+                let signature = null;  // 存储签名信息
+                function readChunk() {
+                    return reader.read().then(({ done, value }) => {
+                        if (done) {
+                            loadingIndicator.remove();
+                            // 滚动到最终内容
+                            modelOutputDiv.scrollIntoView({ behavior: 'smooth' });
+                             // 清空缓冲区并显示签名信息
+                            verification.innerHTML = '';
+                            if (signature) {
+                                const sigDiv = document.createElement('div');
+                                sigDiv.innerHTML =
+                                `
+                                <div class="signature-container">
+                                    <div class="signature-title">签名信息</div>
+                                    <div class="signature-item">
+                                        <strong>SM3哈希值:</strong><br>
+                                        <div class="signature-value">${signature.sm3}</div>
+                                    </div>
+                                    <div class="signature-item">
+                                        <strong>签名数据:</strong><br>
+                                        <div class="signature-value" align = "left">${signature.value}</div>
+                                    </div>
+                                    <div class="signature-item">
+                                        <strong>签名时间:</strong><br>
+                                        <div class="signature-value">${signature.timestamp}</div>
+                                    </div>
+                                    <div class="signature-item">
+                                        <strong>签署者:</strong><br>
+                                        <div class="signature-value">${signature.signatory}</div>
+                                    </div>
+                                    <div class="signature-item">
+                                        <strong>验签结果:</strong><br>
+                                        <div class="signature-value">${signature.valid}</div>
+                                    </div>
+                                </div>
+                                `;
+                                verification.appendChild(sigDiv);
+                            }
+                            return;
+                        }
+                        const chunk = decoder.decode(value, { stream: true });
+
+                        // 尝试解析签名信息
+                        try {
+                            const data = JSON.parse(cleanChunk);
+                            if (data.signature) {
+                                signature = data.signature;
+                                readChunk();
+                                return;
+                            }
+                        } catch (e) {
+                            // 忽略非JSON数据
+                        }
+                        
+                        // 移除多余的换行符和<br>标签
+                        const cleanChunk = chunk.replace(/<br>/g, '').replace(/\n\n/g, '<br>').replace(/\n/g, '');
+                            //  .replace(/</g, '&lt;')  // 保留<think> </think>
+                            //  .replace(/>/g, '&gt;');
+
+                        // 尝试解析签名信息
+                        try {
+                            const data = JSON.parse(cleanChunk);
+                            if (data.signature) {
+                                signature = data.signature;
+                            }
+                        } catch (e) {
+                            // 忽略非JSON数据
+                        }
+                        
+                        // 如果modelOutputDiv不存在，则创建一个新的div
+                        if (!modelOutputDiv) {
+                            modelOutputDiv = document.createElement('div');
+                            modelOutputDiv.className = 'model-output';
+                            output.appendChild(modelOutputDiv);
+                        }
+
+                        // 将新内容追加到现有的大模型输出内容中
+                        // 如果不是签名信息，才进行追加
+                        if (!cleanChunk.startsWith('{"signature"')) {
+                            modelOutputDiv.innerHTML += cleanChunk;
+                            // 添加防抖优化
+                            let scrollTimeout;
+                            if (!scrollTimeout) {
+                                scrollTimeout = setTimeout(() => {
+                                    modelOutputDiv.scrollIntoView({ behavior: 'smooth' });
+                                    scrollTimeout = null;
+                                }, 100);
+                            }
+                        }
+                        modelOutputDiv.scrollIntoView({ behavior: 'smooth' });  // 滚动到大模型输出
+
+                        readChunk();
+                    });
+                }
+
+                readChunk();
+            });
+        }
+    </script>
+</body>
+</html>
