@@ -14,14 +14,11 @@ class SM2Verifier:
         :param public_key: SM2 公钥，十六进制字符串格式
         """
         # 检查私钥和公钥文件是否存在，如果存在则加载私钥和公钥文件的内容
-        # private_key = None
-        # public_key = None
-        # if pri_keyfile is not None:
-        #     private_key = sm2key.load_sm2_private_key(pri_keyfile)
-        # if pub_keyfile is not None:
-        #     public_key = sm2key.load_sm2_public_key(pub_keyfile)
-
-        self.sm2_crypt = sm2.CryptSM2(public_key=public_key, private_key=private_key)
+        if public_key is not None or private_key is not None:
+            self.sm2_crypt = sm2.CryptSM2(public_key=public_key, private_key=private_key)
+        else:
+            print("WARNING: SM2 public key is not provided.")
+            self.sm2_crypt = None                
 
     def verify_signature_with_sm2(self, plaintext, sign_hex):
         """
@@ -32,7 +29,7 @@ class SM2Verifier:
         :return: 验签结果，True 或 False
         """
         if self.public_key is None:
-            print("Failed to load SM2 public key.")
+            print("WARNING: Cannot verify signature.")
             return False
 
         # 使用 SM2 公钥进行验签
@@ -48,7 +45,7 @@ class SM2Verifier:
         :return: 验签结果，True 或 False
         """
         if self.sm2_crypt is None:
-            print("Failed to load SM2 public key.")
+            print("WARNING: Cannot verify signature.")
             return False
 
         # 计算 SM3 哈希
